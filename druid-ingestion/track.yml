@@ -1,0 +1,606 @@
+slug: druid-ingestion
+id: ixizshlv9emo
+type: track
+title: Apache Druid Ingestion
+teaser: Let's ingest raw data and write Druid segments
+description: |-
+  Apache Druid Ingestion - How to convert raw data into segments
+
+  **In this track we will:**
+    - Set up an ingestion _configSpec_
+    - Configure the _dataSchema_ section of the ingestion spec
+    - Specify tuning in the tuningSpec section of the ingestion spec
+icon: https://cdn.instruqt.com/assets/templates/ubuntu.png
+tags: []
+owner: imply
+developers:
+- steve.halladay@imply.io
+private: false
+published: true
+skipping_enabled: true
+challenges:
+- slug: 01-io-config-spec
+  id: uwdeugqscooz
+  type: challenge
+  title: Defining the ioConfigSpec
+  teaser: Learn how to set up a batch ioConfig spec
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/Rj-lnoDj5MA
+  assignment: |-
+    For this track, we have installed and launched a single-server Apache Druid system.
+    Review the running Druid processes with the following command.
+
+    ```
+    ps -ef | grep "Main server [A-Za-z]*$" | awk 'NF{print $NF}'
+    ```
+
+    Take a look at the format of the raw data we want to ingest.
+
+    ```
+    head --lines 1 /root/apache-druid-0.21.1/quickstart/tutorial/wikiticker-2015-09-12-sampled.json | jq
+    ```
+
+    The previous command only shows the first line of the file.
+    Do you want to know how many lines there are in the file?
+
+    ```
+    wc -l /root/apache-druid-0.21.1/quickstart/tutorial/wikiticker-2015-09-12-sampled.json
+    ```
+
+    Let's build the ingestion spec.
+    Here is the [documentation for the ingestion spec](https://druid.apache.org/docs/latest/ingestion/native-batch.html).
+    We'll build this in a top-down fashion, a piece at a time.
+
+    Open the ingestion spec in the editor.
+
+    ![Open the editor](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/OpenSpec.png)
+
+    Let's create the general outline of the ingestion spec with the two top-level sections.
+    - _type_ with value *index_parallel*, which indicates batch ingestion.
+    - _spec_ which will contain the remainder of the ingestion spec.
+
+    Paste the following in the ingestion spec file.
+
+    ```
+    {
+      "type" : "index_parallel",
+      "spec" : {}
+    }
+    ```
+
+
+    Within the _spec:_ section, we will add three subsections.
+    - _dataSchema_ defines the datasource (i.e., table)
+    - _ioConfig_ describes the raw data input source
+    - _tuningConfig_ configures tuning paramters like segment size limits
+
+
+    Insert the labels for all three subsections by copying the following and replacing the empty _spec:_ section.
+
+    ```
+      "spec" : {
+        "dataSchema" : {},
+        "ioConfig" : {},
+        "tuningConfig" : {}
+      }
+    ```
+
+    <hr style="background-color:cyan">
+    <p><span style="color:cyan"><strong><em>NOTE:</em></strong></span> <i>It's easy to reformat the file. Right-click inside the file, select Command Pallette, then scroll down and select Format Document.</i></p>
+    <img src="https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/FormatDocument.png" alt="Format the document">
+    <hr style="background-color:cyan">
+
+    Below is what the ioConfig subsection looks like.
+    Learn more about ioConfig [here](https://druid.apache.org/docs/latest/ingestion/native-batch.html#ioconfig).
+
+    Note the following:
+    - _type_ is always <i>index_parallel</i> for batch ingestion
+    - _inputSource_ tells about how to find the raw input file
+      - _type_ is _local_ meaning the input is on the local file system - alternatively we could use _http_ if the input is from a URL
+      - _baseDir_ is the local directory containing the input file
+      - _filter_ contains the file name
+    - _inputFormat_ describes the format of the file we will ingest, which could be JSON, CSV, TSV, etc. Learn more [here](https://druid.apache.org/docs/latest/ingestion/data-formats.html#input-format)
+    - _appendToExisting_ is false, meaning we want to overwrite the datasource/table contents, if any.
+
+    Replace the empty _ioConfig_ section in the spec with the following.
+
+    ```
+      "ioConfig" : {
+        "type" : "index_parallel",
+        "inputSource" : {
+          "type" : "local",
+          "baseDir" : "/root/apache-druid-0.21.1/quickstart/tutorial/",
+          "filter" : "wikiticker-2015-09-12-sampled.json"
+        },
+        "inputFormat" :  {
+          "type": "json"
+        },
+        "appendToExisting" : false
+      },
+    ```
+
+    Save the file.
+
+    ![Save the file](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/SaveFile.png)
+
+    One last point: sometimes as part of the ingestion process, it is necessary to flatten the data to convert the input format to the Druid segment format.
+    We can specify how to flatten the data as part of the _inputFormat_ section.
+
+
+    Our example data does not require flattening (because there are no nested fields).
+    But, you can read more about flattening [here](https://druid.apache.org/docs/latest/ingestion/data-formats.html#flattenspec).
+
+
+    <hr style="background-color:cyan">
+    <p><span style="color:cyan"><strong><em>NOTE:</em></strong></span> <i>If you have problems building the ingestion spec during any of these challenges, you can click the Skip link in the bottom right corner and we will fix the spec for you.</i></p>
+    <hr style="background-color:cyan">
+
+
+    ## Great! That takes care of the ioConfig subsection!
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: single-server
+  - title: Editor
+    type: code
+    hostname: single-server
+    path: /root
+  difficulty: basic
+  timelimit: 900
+- slug: 02-data-schema-granularity-spec
+  id: yibai6rcscm2
+  type: challenge
+  title: Defining timestampSpec and granularitySpec
+  teaser: Begin to explore the dataSchemna with the granularitySpec
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/d3mE1iqiq8w
+  assignment: |-
+    In the previous challenge, we looked at the ioConfigSpec.
+    In this challenge we introduce the [_dataSchema_](https://druid.apache.org/docs/latest/ingestion/index.html#dataschema) and dig into the [_timestampSpec_](https://druid.apache.org/docs/latest/ingestion/index.html#timestampspec) and [_granularitySpec_](https://druid.apache.org/docs/latest/ingestion/index.html#granularityspec).
+
+    Let's review what our data looks like.
+
+    ```
+    head --lines 1 /root/apache-druid-0.21.1/quickstart/tutorial/wikiticker-2015-09-12-sampled.json | jq
+    ```
+
+    Make mental note of the _time_ field and its format.
+    You will see later how we will use this.
+
+    Open the ingestion spec in the editor.
+
+    ![Open the editor](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/OpenSpec.png)
+
+    Let's expand the dataSchema section of the ingestionSpec.
+    The dataSchema section contians five objects.
+    - _dataSource_ - the name of the Druid table
+    - _timestampSpec_ - describes how to ingest the time field
+    - _dimensionSpec_ - describes the dimension columns within the table
+    - _metricsSpec_ - describes the columns in the table that are metric types
+    - _granularitySpec_ - specifies the time precision, segment interval, etc.
+
+    Replace the empty _dataSchema_ section in the editor with the _dataSchema_ outline below.
+
+    ```
+          "dataSchema" : {
+            "dataSource" : "wikipedia",
+            "timestampSpec" : {},
+            "dimensionsSpec" : {},
+            "metricsSpec" : [],
+            "granularitySpec" : {}
+          },
+
+    ```
+
+    <hr style="background-color:cyan">
+    <p><span style="color:cyan"><strong><em>NOTE:</em></strong></span> <i>The dataSource field has a value of "wikipedia".
+    This is how we specify the name of the table where we will place the ingested the data.</i></p>
+    <hr style="background-color:cyan">
+
+
+    In this challenge we will fill out the contents of the _timestampSpec_ and _granularitySpec_ sections of _dataSchema_.
+
+
+    The [_timestampSpec_](https://druid.apache.org/docs/latest/ingestion/index.html#timestampspec) contains the following.
+    - _column_ - the input record field containing the primary timestamp
+    - _format_ - describes the input timestamp format (see the [docs](https://druid.apache.org/docs/latest/ingestion/index.html#timestampspec) for possible values)
+    - _missingValue_ - this is the value used for records with missing timestamps
+
+
+    We'll use the following _timestampSpec_.
+    Replace the empty _timestampSpec_ with the following.
+
+    ```
+            "timestampSpec" : {
+              "column" : "time",
+              "format" : "auto"
+            },
+
+    ```
+
+    We don't have any missing timestamps in our input data, so we don't include the _missingValue_ field.
+
+
+    Now, let's fill out the [_granularitySpec_ ](https://druid.apache.org/docs/latest/ingestion/index.html#granularityspec) section.
+    It has the following.
+    - _segmentGranularity_ - maximum temporal length of segments
+    - _queryGranularity_ - timestamp precision (stored timestamps will be truncated to this precision)
+    - _intervals_ - a list of intervals used in the ingestion (records with timestamps outside of these interval will not be ingested)
+    - _rollup_ - a flag indicating the use of rollup to combine and aggregate similar rows
+
+    Replace the empty _granularitySpec_ with the following.
+
+    ```
+            "granularitySpec": {
+              "segmentGranularity": "day",
+              "queryGranularity": "hour",
+              "intervals": ["2015-09-12/2015-09-13"],
+              "rollup": true
+            }
+    ```
+
+    <hr style="background-color:cyan">
+    <p><span style="color:cyan"><strong><em>NOTE:</em></strong></span> <i>Remember, it's easy to reformat the file. Right-click inside the file, select Command Pallette, then scroll down and select Format Document.</i></p>
+    <img src="https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/FormatDocument.png" alt="Format the document">
+    <hr style="background-color:cyan">
+
+
+    Save the file.
+
+    ![Save the file](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/SaveFile.png)
+
+
+    ## That was easy! Now you understand the _timestampSpec_ and the _granularitySpec_.
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: single-server
+  - title: Editor
+    type: code
+    hostname: single-server
+    path: /root
+  difficulty: basic
+  timelimit: 600
+- slug: 03-data-schema-dimensions
+  id: phlawh29apmv
+  type: challenge
+  title: Data Schema Dimensions
+  teaser: Create the dataSchema dimensions for your table
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/cZoIqamr7TQ
+  assignment: |2-
+
+    The next step in setting up the data schema is to define the dimensions.
+    [Dimensions](https://druid.apache.org/docs/latest/ingestion/index.html#dimensionsspec) are those columns in your table that contain regular data values.
+
+
+    Let's take another look at an example record in the input data.
+
+    ```
+    head --lines 1 /root/apache-druid-0.21.1/quickstart/tutorial/wikiticker-2015-09-12-sampled.json | jq
+    ```
+
+    We'll only use one of these fields (i.e. _user_) as a dimension column so that we can demostrate rollup.
+    You may recall that the quickstart example uses all of these fields as dimensions.
+
+    Open the ingestion spec in the editor.
+
+    ![Open the editor](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/OpenSpec.png)
+
+    The simplest [_dimensionsSpec_](https://druid.apache.org/docs/latest/ingestion/index.html#dimensionsspec) consists of a list of dimensions, or data columns.
+    Each entry in the list has the following.
+    - _name_ - the name of both the input record field and the table column (if these names differ, see [_transformSpec_](https://druid.apache.org/docs/latest/ingestion/index.html#transformspec))
+    - _type_ - the data type which can be _string_, _long_, _float_ or _double_ - the defualt is _string_ if not specified.
+
+    Replace the empty _dimensionSpec_ with the following.
+
+    ```
+              "dimensionsSpec" : {
+                "dimensions" : [
+                  "user"
+                ]
+              },
+    ```
+
+    Normally, you might have many dimensions, but in this example we are only using one dimension named _user_.
+
+    Save the file.
+
+    ![Save the file](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/SaveFile.png)
+
+    ## Wow! Defining Druid dimension columns is easy!
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: single-server
+  - title: Editor
+    type: code
+    hostname: single-server
+    path: /root
+  difficulty: basic
+  timelimit: 600
+- slug: 04-data-schema-metrics
+  id: 0xkwxpvjxpud
+  type: challenge
+  title: Data Schema Metrics
+  teaser: Create the dataSchema metrics for your table
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/_fzHriwVk8g
+  assignment: |2-
+
+    Let's set up some metrics columns in our table.
+    Metrics columns allow us to do [_rollups_](https://druid.apache.org/docs/latest/tutorials/tutorial-rollup.html), which is where Druid combines several rows and aggregates metrics columns.
+
+
+    Let's take another look at an example record in the input data.
+
+    ```
+    head --lines 1 /root/apache-druid-0.21.1/quickstart/tutorial/wikiticker-2015-09-12-sampled.json | jq
+    ```
+
+    We'll use three columns as metrics: _added_, _deleted_ and _delta_.
+    We'll also add a _recordSum_ column that will tell us how many input records got rolled-up into our table row.
+
+    Open the ingestion spec in the editor.
+
+    ![Open the editor](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/OpenSpec.png)
+
+    The [_metricsSpec_](https://druid.apache.org/docs/latest/ingestion/index.html#metricsspec) consists of a list of aggregators.
+    Each aggregator in the list has the following.
+    - _fieldName_ - the name of the field in the input record
+    - _name_ - the name of the column in the Druid table
+    - _type_ - the type of aggregation, here's a [list](https://druid.apache.org/docs/latest/querying/aggregations.html)
+
+    Replace the empty _metricsSpec_ list with the following.
+
+    ```
+            "metricsSpec": [
+                {
+                    "type": "count",
+                    "name": "recordSum"
+                },
+                {
+                    "fieldName": "added",
+                    "name": "addedSum",
+                    "type": "longSum"
+                },
+                {
+                    "fieldName": "deleted",
+                    "name": "deletedSum",
+                    "type": "longSum"
+                },
+                {
+                    "fieldName": "delta",
+                    "name": "deltaSum",
+                    "type": "longSum"
+                }
+            ],
+    ```
+
+    <hr style="background-color:cyan">
+    <p><span style="color:cyan"><strong><em>NOTE:</em></strong></span> <i>recordSum has no fieldName because ingestion calculates this value by counting the number of combined records.</i></p>
+    <hr style="background-color:cyan">
+
+    Save the file.
+
+    ![Save the file](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/SaveFile.png)
+
+    ## Cool! Defining Druid metics columns is easy too!
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: single-server
+  - title: Editor
+    type: code
+    hostname: single-server
+    path: /root
+  difficulty: basic
+  timelimit: 600
+- slug: 05-tuning-config
+  id: xfnhcpddidy8
+  type: challenge
+  title: Tuning Config
+  teaser: Complete the ingestion spec by specifying the tuning config values
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/CzQy6LkYK9Y
+  assignment: |-
+    The final piece we need to put in place is the [_tuningConfig_](https://druid.apache.org/docs/latest/ingestion/index.html#tuningconfig) section.
+    This section gives the ingestion process some parameters for segment creation.
+
+    Open the ingestion spec in the editor.
+
+    ![Open the editor](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/OpenSpec.png)
+
+    [_tuningConfig_](https://druid.apache.org/docs/latest/ingestion/index.html#tuningconfig)'s have three main values.
+    - _type_ - matches the ingestion spec type
+    - _maxRowsPerSegment_ - the maximum number of rows ingested into a single segment
+    - _maxRowsInMemory_ - the maximum amount of memory that a single segment can consume
+
+    Replace the empty _tuningConfig_ section (near the bottom of the file) with the following.
+
+    ```
+        "tuningConfig" : {
+          "type" : "index_parallel",
+          "maxRowsPerSegment" : 5000000,
+          "maxRowsInMemory" : 25000
+        }
+    ```
+
+    Save the file.
+
+    ![Save the file](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-ingestion/SaveFile.png)
+
+    ## That's it! Your ingestion spec is complete!
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: single-server
+  - title: Editor
+    type: code
+    hostname: single-server
+    path: /root
+  difficulty: basic
+  timelimit: 600
+- slug: 06-run-ingestion
+  id: ox8asvbusupj
+  type: challenge
+  title: Run the Ingestion
+  teaser: You've built the ingestion spec - now, run it!
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/-cERjgbil1k
+  assignment: |-
+    Now that the ingestion spec is ready, let's ingest some data!
+    Here's the command to submit the ingestion spec to Druid.
+
+    ```
+    /root/apache-druid-0.21.1/bin/post-index-task \
+      --file /root/ingestion-spec.json \
+      --url http://localhost:8081
+    ```
+
+    To show that the ingestion was successful, let's perform a simple query to see how many of rows our table has.
+    This is the query: <i>SELECT COUNT(*) AS numRows FROM wikipedia</i>.
+
+
+    To execute the query, paste the following into the terminal.
+
+    ```
+    curl -X 'POST' \
+      -H 'Content-Type:application/json' \
+      -d @/root/query-number-of-rows.json \
+      http://localhost:8888/druid/v2/sql | jq
+    ```
+
+    <details>
+      <summary style="color:cyan"><b>Want us to explain the output? Click here.</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    The format of the results from the query are a JSON record with a single field: <i>numRows</i>.
+    This field tells you how many total rows are in the wikipedia table.
+    <hr style="background-color:cyan">
+    </details>
+
+
+    Compare the number of rows in the table to the number of rows in the input file.
+
+    ```
+    wc -l /root/apache-druid-0.21.1/quickstart/tutorial/wikiticker-2015-09-12-sampled.json
+    ```
+
+    <details>
+      <summary style="color:cyan"><b>Want to understand this output? Click here.</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    The <i>wc -l</i> command counts the number of lines in the raw data input file we ingested.
+    So, the output shows how many lines (or records) we ingested, followed by the name of the file.
+    <hr style="background-color:cyan">
+    </details>
+
+
+    We see that there are fewer rows in the table than records in the input file!
+    This is because ingestion has rolled-up some of the input rows.
+
+    To investigate this further, look at these records from the input file that are for activity of a given user (Diannaa) for a single specific hour.
+
+    ```
+    grep Diannaa \
+      /root/apache-druid-0.21.1/quickstart/tutorial/wikiticker-2015-09-12-sampled.json | \
+      grep "2015-09-12T20:" | \
+      jq '"****************","user: "+.user,"added: "+(.added|tostring),"deleted: "+(.deleted|tostring),"delta: "+(.delta|tostring)'
+    ```
+
+    <details>
+      <summary style="color:cyan"><b>Want to understand this output? Click here.</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    The <i>grep</i> command searches the raw data input file lines containing <i>Diannaa</i>.
+    Then, we pipe the output from that command into a second <i>grep</i> command that searches for records with a specific timestamp.
+    The <i>jq</i> command formats the output from the previous command so it's easy to read.
+    <br><br>
+    What you end up with is two JSON records where the <i>user</i> is <i>Diannaa</i> and the time is <i>2015-09-12T20</i>.
+    The records show the user who changed Wikipedia and the number of characters they, added, deleted and total number of characters changed.
+    <hr style="background-color:cyan">
+    </details>
+
+
+    Compare those records to the rolled-up row from the table
+    (here's the query we wil perform: <i>SELECT * FROM wikipedia WHERE user LIKE '%Diannaa%' AND __time BETWEEN TIMESTAMP '2015-09-12 20:00:00' AND TIMESTAMP '2015-09-13 20:00:00'</i>).
+
+    ```
+    curl -X 'POST' \
+      -H 'Content-Type:application/json' \
+      -d @/root/query-diannaa.json http://localhost:8888/druid/v2/sql | jq
+    ```
+
+    <details>
+      <summary style="color:cyan"><b>Want to understand this output? Click here.</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    The <i>curl<i> command issues a query to the Druid <i>wikipedia</i> table.
+    What you see is one JSON record that is the result of the query.
+    This is intersting, because we ingested two records, but we only have one in the table.
+    But if you inspect the one record, you see that its values are a rollup of the two raw records.
+    <br><br>
+    Note that the record contains the same user field, and the aggregated added, deleted and delta fields, as well as a record sum field, which tells how many records were rolled up into this row.
+    <hr style="background-color:cyan">
+    </details>
+
+
+    You can see that the values (_added_, _deleted_ and _delta_) from the two input records add up to the rolled-up values (_addedSum_, _deletedSum_ and _deltaSum_).
+
+
+    Finally, let's look at the _count_ column named _recordSum_, which tells how many raw data records were rolled-up into a single table data source row.
+    We will only look at rows where multiple records were rolled up and we will limit the results to 10 rows so the output isn't overwhelming.
+
+    Here's the query:
+
+    <pre><code style="color:green">SELECT user, recordSum
+      FROM wikipedia
+      WHERE recordSum > 1
+      AND __time BETWEEN
+          TIMESTAMP '2015-09-12 20:00:00'
+        AND
+          TIMESTAMP '2015-09-13 20:00:00'
+      LIMIT 10"
+    </code></pre>
+
+    Use this command to execute the query.
+
+    ```
+    curl -X 'POST' \
+      -H 'Content-Type:application/json' \
+      -d @/root/query-rollup.json http://localhost:8888/druid/v2/sql | jq
+    ```
+
+    <details>
+      <summary style="color:cyan"><b>Want to understand this output? Click here.</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    The output is an array of JSON records.
+    Each record contains a <i>user</i> attribute, and a <i>recordSum</i> attribute.
+    The <i>recordSum</i> tells how many raw data records were rolled up into the row.
+    <hr style="background-color:cyan">
+    </details>
+
+
+    Rollup is great because you can use it to make your queries faster!
+
+
+    ## Amazing! You were able to create and execute a Druid ingestion!
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: single-server
+  - title: Editor
+    type: code
+    hostname: single-server
+    path: /root
+  difficulty: basic
+  timelimit: 600
+checksum: "11205930489589840618"

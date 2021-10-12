@@ -1,0 +1,248 @@
+slug: try-druid
+id: ayzqzjxgulzm
+type: track
+title: Try Druid
+teaser: Stand-up a single-node Druid cluster
+description: |-
+  # Try Druid
+
+  Stand-up a single-node Druid cluster, ingest some data and perform a query!
+icon: https://cdn.instruqt.com/assets/templates/ubuntu.png
+tags: []
+owner: imply
+developers:
+- steve.halladay@imply.io
+private: false
+published: true
+challenges:
+- slug: 01-try-druid
+  id: ehqvag8meley
+  type: challenge
+  title: Let's Install Druid
+  teaser: Learn how to install and run Druid
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/RnAWJ1Vfq50
+  assignment: |2-
+
+    <details>
+      <summary style="color:cyan"><b>Are you new to these exercises? Click here for instructions.</b></summary>
+    <hr style="background-color:cyan">
+    <br>These exercises allow you to actually <i>do</i> the tasks involved in learning Druid within the comfort of your browser!<br><br>
+    Click on the command boxes to copy the commands to your clipboard.
+    Then, paste the commands in the terminal to execute them.<br><br>
+    Some of the steps of the exercise will require using browser tabs external to the exercise tab.
+    When necessary, the exercise will explain how to open these external tabs.
+    When working in other browser tabs, you will want to switch back and forth between the tabs.<br><br>
+    That's all there is to it! Enjoy!
+    <hr style="background-color:cyan">
+    </details>
+
+    Here's what the [official website](https://druid.apache.org/docs/0.21.1/tutorials/index.html#requirements) says we need in order to run Duid.
+
+    TLDR; we need an environement with Java 8 installed (including the JAVA_HOME environment variable).
+    Let's verify our environemnt is ready to go.
+
+    First, look at the Java version.
+
+    ```
+    java -version
+    ```
+
+    Next, check that <i>JAVA_HOME</i> is set correctly.
+
+    ```
+    echo $JAVA_HOME
+
+    ```
+
+    Download Druid (here's a [list of mirror sites](https://www.apache.org/dyn/closer.cgi?path=/druid/0.21.1/apache-druid-0.21.1-bin.tar.gz) if you want to find one close to your location).
+    Depending on the download speed, this may take a few minutes.
+
+    ```
+    wget https://ftp.wayne.edu/apache/druid/0.21.1/apache-druid-0.21.1-bin.tar.gz
+    ```
+
+    Unzip the downloaded file.
+
+    ```
+    tar -xzf apache-druid-0.21.1-bin.tar.gz
+    ```
+
+    We'll start Druid with _nohup_ so that the Druid processes persist between Instruqt challenges.
+
+    <details>
+      <summary style="color:cyan"><b><i>nohup</i> is scary! How would I run Quickstart Druid without <i>nohup</i>? Click here.</b></summary>
+    <hr style="background-color:cyan">
+    <br>Don't let the <code>nohup</code> command scare you.
+    At its core, here's the real command to start Druid.
+    <code>root/apache-druid-0.21.1/bin/start-nano-quickstart</code>
+    All the other trimmings are just to allow the Druid processes to continue running when we move to the next challenge.
+    <hr style="background-color:cyan">
+    </details>
+
+    ```
+    nohup /root/apache-druid-0.21.1/bin/start-nano-quickstart > /root/apache-druid-0.21.1/log.out 2> /root/apache-druid-0.21.1/log.err < /dev/null & disown
+    ```
+
+    You can see the various Druid processes with this command.
+    (Yeah, this command looks a bit gnarly, but just trust us on this one)
+
+    ```
+    ps -ef | grep "Main server [A-Za-z]*$" | awk 'NF{print $NF}'
+    ```
+
+    <hr style="background-color:cyan">
+    <p><span style="color:cyan"><strong><em>NOTE:</em></strong></span> <i>In this quickstart, the coordinator and overlord run in the same process named coordinator.
+    Also, we aren't showing the ZooKeeper process in the list.</i></p>
+    <hr style="background-color:cyan">
+
+    Another way to see what is running is to check out the log file.
+
+    ```
+    cat /root/apache-druid-0.21.1/log.out
+    ```
+
+    Notice that the log file also shows that ZooKeeper was started.
+
+    ## Outstanding! Druid is up and running!
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: container
+  difficulty: basic
+  timelimit: 600
+- slug: 02-druid-ingest
+  id: gyxifos6gmaj
+  type: challenge
+  title: Let's Ingest Data into Druid
+  teaser: Learn how to ingest Druid data
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/gC9wmbJi9hs
+  assignment: |2-
+
+    <details>
+      <summary style="color:cyan"><b>Want to know about Druid ingestion? Click here!</b></summary>
+    <hr style="background-color:cyan">
+    Druid ingestion is about connecting and preparing data for Druid to use.
+    As you can see in the Druid console Data Loading screen, there are four main steps to ingestion.
+    These steps include:
+    <ol>
+    <li><b>Connect and parse raw data</b> - this is about getting the data into a usable format</li>
+    <li><b>Transform data and configure schema</b> - this step makes sure you have the right dimensions</li>
+    <li><b>Tune parameters</b> - this step prepares the rows of data</li>
+    <li><b>Verify and submit</b> - the final step is for Druid to consume the data</li>
+    </ol>
+    <img src="https://raw.githubusercontent.com/shallada/InstruqtImages/main/try-it-out/FourSections.png" alt="Four steps of ingestion">
+    Within each of these steps are several activities, which we will explain in later tracks on ingestion.
+    <br><br>
+    The whole point of these various steps is to create a specification file that Druid will use to ingest the data.
+    You can see this specification on the left side of the <i>Submit</i> screen.
+    <img src="https://raw.githubusercontent.com/shallada/InstruqtImages/main/try-it-out/BuildSpec.png" alt="Building the ingestion spec">
+    <hr style="background-color:cyan">
+    </details>
+
+
+    With Druid running, let's look at the Druid console.
+    Click on the green _Open external window_ button in the middle of the adjacent window as shown.
+
+    <hr style="background-color:cyan">
+    <p><span style="color:cyan"><strong><em>NOTE:</em></strong></span> <i>During this challenge, you will need to switch back and forth between the Console tab and this challenge tab.</i></p>
+    <hr style="background-color:cyan">
+
+    ![Click console](https://raw.githubusercontent.com/shallada/InstruqtImages/main/try-it-out/ClickConsole.png)
+
+    Load data by clicking as shown.
+
+    ![Click example data](https://raw.githubusercontent.com/shallada/InstruqtImages/main/try-it-out/LoadData.png)
+
+    The console walks you through the ingestion steps.
+    Since we are using example data, we can just accept the defaults by clickng the _Next:-_ buttons.
+
+    ![Click example data](https://raw.githubusercontent.com/shallada/InstruqtImages/main/try-it-out/ClickWildly.png)
+
+    <hr style="background-color:cyan">
+    <p><span style="color:cyan"><strong><em>NOTE:</em></strong></span> <i>In this introductory track, we will not cover the details of ingestion, but the purpose of the previous screen through which we wildly clicked was to build an ingestion specification.
+    You can review the JSON ingestion specification on left side of this final screen.</i>
+    <hr style="background-color:cyan">
+
+    Finally, click _Submit_ to ingest the data.
+
+    ![Click Next](https://raw.githubusercontent.com/shallada/InstruqtImages/main/try-it-out/ClickSubmit.png)
+
+    The ingestion takes a minute or so.
+    You will know Druid has written the segments to deep storage when you see the _SUCCESS_ status.
+
+    ![Wait for SUCCESS](https://raw.githubusercontent.com/shallada/InstruqtImages/main/try-it-out/WaitForSuccess.png)
+
+    After Druid writes the segments to deep storage, it then loads the segments for querying.
+    You can tell the segments are loaded and ready when you see this.
+
+    ![Segments Loaded](https://raw.githubusercontent.com/shallada/InstruqtImages/main/try-it-out/SegmentsLoaded.png)
+
+    ## Cool! You have ingested the data!
+  tabs:
+  - title: Console
+    type: service
+    hostname: container
+    path: /
+    port: 8888
+    new_window: true
+  - title: Shell
+    type: terminal
+    hostname: container
+  difficulty: basic
+  timelimit: 600
+- slug: 03-druid-query
+  id: ibu1emvmjxnv
+  type: challenge
+  title: Let's Query Druid
+  teaser: Learn how to query Druid data
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/25jszmbNMms
+  assignment: |-
+    With Druid running and data ingested, let's return to the Druid console.
+    Click on the browser tab containing the Druid Unified Console, or on the green _Open external window_ button in the middle of the adjacent window as shown.
+
+    <hr style="background-color:cyan">
+    <p><span style="color:cyan"><strong><em>NOTE:</em></strong></span> <i>During this challenge, you will need to switch back and forth between the Console tab and this challenge tab.</i></p>
+    <hr style="background-color:cyan">
+
+    ![Click console](https://raw.githubusercontent.com/shallada/InstruqtImages/main/try-it-out/ClickConsole.png)
+
+    This data is about updates to Wikipedia during a one day period.
+    Both people and robots contributed to the updates.
+
+
+    Suppose you want to know how updates vary for humans and robots over time.
+    Here's a query that can help you answer that question.
+
+    ```
+    SELECT
+      DATE_TRUNC('hour',"__time"),
+      (AVG(commentLength) FILTER(WHERE isRobot=true)) as robots,
+      (AVG(commentLength) FILTER(WHERE isRobot=false)) as humans
+    FROM wikipedia
+    GROUP BY 1
+    ```
+
+    Click on the _Query_ tab, paste the query in the console and run it as shown.
+    Then, check out the results.
+
+    ![Query Druid](https://raw.githubusercontent.com/shallada/InstruqtImages/main/try-it-out/DruidQuery.png)
+
+
+    ## Wow! Druid queries are easy!
+  tabs:
+  - title: Console
+    type: service
+    hostname: container
+    path: /
+    port: 8888
+    new_window: true
+  difficulty: basic
+  timelimit: 600
+checksum: "3966468442111885423"
+_: ""

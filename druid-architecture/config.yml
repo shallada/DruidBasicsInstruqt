@@ -1,0 +1,18 @@
+version: "2"
+containers:
+- name: master-server
+  image: ubuntu
+  shell: /bin/bash
+  memory: 1024
+- name: data-server-1
+  image: ubuntu
+  shell: /bin/bash
+  memory: 2048
+- name: data-server-2
+  image: ubuntu
+  shell: /bin/bash
+  memory: 2048
+- name: query-server
+  image: ubuntu
+  shell: /bin/bash
+  memory: 1024

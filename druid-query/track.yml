@@ -1,0 +1,522 @@
+slug: druid-query
+id: 7oymaemejvvj
+type: track
+title: Apache Druid Queries
+teaser: Query your Druid database
+description: |-
+  Apache Druid Queries
+
+  **In this track we will:**
+    - Create queries using the Druid Console
+    - Perform queries using the Druid SQL command prompt
+    - Submit queries using the Druid API using cURL
+    - Build and query a Kafka-based monitoring system
+icon: https://storage.googleapis.com/instruqt-frontend/img/tracks/default.png
+tags: []
+owner: imply
+developers:
+- steve.halladay@imply.io
+private: false
+published: true
+challenges:
+- slug: 01-console-sql
+  id: plmjeigovzua
+  type: challenge
+  title: Druid Queries Using the Console
+  teaser: Use the console to query Druid
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/tgnmRo4U3ak
+  assignment: |2-
+
+    In this challenge we'll query the example Wikipedia data using the Druid Console.
+    We have already ingested the data for you, so let's do a query!
+
+    Click on the link to open the console (which will open a new browser tab), then click on the query tab.
+    When you're done, return to this browser tab to continue.
+
+    ![Open the query tab](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/ClickConsoleQuery.png)
+
+
+    Copy the following query, paste it in the query window and click the _Run_ button.
+
+    <details>
+      <summary style="color:cyan"><b>What does this query do?</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    This query retrieves only certain columns (<i>__time</i>, <i>user</i>, <i>page</i>, <i>added</i>, <i>deleted</i>) for a single day (June 27, 2016).
+    We use this query to show who was changing which Wikipedia pages on June 27, 2016.
+    <br><br>
+    It turns out that the only data we have in the table data source is from June 27, 2016, but we filter on the <i>__time</i> column to demostrate best practices.
+    <hr style="background-color:cyan">
+    </details>
+
+
+    ```
+    SELECT __time, user, page, added, deleted
+      FROM wikipedia
+      WHERE (TIMESTAMP '2016-06-27' <= __time AND __time < TIMESTAMP '2016-06-28')
+    ```
+
+    ![Run first query](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/RunFirstQuery.png)
+
+
+    <hr style="background-color:cyan">
+    <p><span style="color:cyan"><strong><em>NOTE:</em></strong></span> <i>It is a Druid best-practice always to filter by __time.
+    Not doing so runs the risk of overwhelming the cluster for large table data sources.</i></p>
+    <hr style="background-color:cyan">
+
+    You may have noticed that you only see about one hundred resulting rows from the query.
+    This is because of the _Auto limit_ feature.
+
+    Turn _Auto limit_ off by clicking on it, and rerun the query to see all the results.
+
+    ![Turn off Auto limit](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/TurnOffAutoLimit.png)
+
+
+    The Console helps you build queries.
+    Let's modify the query using the helpful Console features.
+
+    Click on the data source name (i.e., wikipedia), then click on the first option.
+
+    ![Build Query](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/BuildQuery.png)
+
+    You see that the Console populates the list of selected columns with all the columns in the data source, and executes the query.
+
+
+    Let's pare-down the list of columns to the ones we had before (<i>__time</i>, <i>user</i>, <i>page</i>, <i>added</i>, <i>deleted</i>).
+
+    ```
+    SELECT
+      __time,
+      "user",
+      page,
+      added,
+      deleted
+    FROM wikipedia
+    WHERE (TIMESTAMP '2016-06-27' <= __time AND __time < TIMESTAMP '2016-06-28')
+    ```
+
+    After you have adjusted the list of coloumns, add a filter to only look at a single _user_.
+
+    Click to expand the list under _wikipedia_.
+    Then, click on _user_, hover over the _Filter_ option and click on _"user"='...'_.
+
+    ![Add user filter](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/AddUserFilter.png)
+
+    Fill in the user value with the following and run the query.
+
+    ```
+    Diannaa
+    ```
+
+    ![Fill in Diannaa](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/FillInDiannaa.png)
+
+    Let's look at one more feature of the Druid Console.
+    Click on the elipses next to the _Run_ button.
+    Then click on _Explain SQL query_.
+
+    ![Explain Query](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/ExplainQuery.png)
+
+    You will see a pop-up window containing JSON.
+
+    ![Explain JSON](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/ExplainJSON.png)
+
+    This JSON is a _native query_.
+    We will not cover the details of native queries in this track, other than to make you aware of them.
+
+    Feel free to explore the Druid Console _Query_ tab by creating your own queries.
+    You will notice that the Druid Console helps you create filters, and also gives you command completion prompts.
+
+    If you want more info on Druid queries using the console, check out this [tutorial](https://druid.apache.org/docs/latest/tutorials/tutorial-query.html).
+
+
+    ## Wow! Console queries are easy!
+  tabs:
+  - title: Console
+    type: service
+    hostname: single-server
+    path: /
+    port: 8888
+    new_window: true
+  difficulty: basic
+  timelimit: 900
+- slug: 02-druid-sql
+  id: tslx8llukhmh
+  type: challenge
+  title: Druid Queries Using the Druid SQL Client
+  teaser: Use the command line tool to query Druid
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/ayILIHQcKn8
+  assignment: |2-
+
+    Sometimes it's helpful to use a command line interface.
+    Druid provides a command line client.
+    Start the client as follows.
+
+    ```
+    /root/imply-2021.09/bin/dsql
+    ```
+
+    Try submitting the query from the previous step.
+
+    ```
+    SELECT __time, "user", page, added, deleted
+      FROM wikipedia
+      WHERE (TIMESTAMP '2016-06-27' <= __time
+        AND
+        __time < TIMESTAMP '2016-06-28')
+      LIMIT 10;
+    ```
+
+    Notice that we modified the query slightly from the previous challenge.
+    Specifically, we added _LIMIT 10_ so we only get the first 10 rows.
+    Notice also that we end command line queries with a semicolon.
+
+
+    Here's another intersting query that tells us the wikipedia update activity (number of lines deleted) by hour of the day.
+
+
+    <details>
+      <summary style="color:cyan"><b>How does this query work?</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    Let's break down the various piees of this query.
+    <ul>
+    <li><i>FLOOR(__time to HOUR) AS HourTime</i> selects the <i>__time</i> column and rounds it down to the hour, and labels the column <i>HourTime</i> - learn more <a href="https://druid.apache.org/docs/latest/querying/sql.html#time-functions" target="_blank">here</a></li>
+    <li><i>SUM(deleted) AS LinesDeleted</i> aggregates the <i>deleted</i> column by summing up all rows for that hour, and labels the column <i>LinesDeleted</i> - learn about <a href="https://druid.apache.org/docs/latest/querying/sql.html#aggregation-functions" target="_blank">aggreation functions</a></li>
+    <li><i>FROM wikipedia WHERE "__time" BETWEEN...</i> behaves like the <i>WHERE</i> cluase in the previous query, which filters down to June 27, 2016 - learn more <a href="https://druid.apache.org/docs/latest/querying/sql.html#from" target="_blank">here</a></li>
+    <li><i>GROUP BY 1</i> tells Druid to group rows by the first selected column (i.e., HourTime) - we could have also used <i>GROUP BY FLOOR(__time to HOUR)</i> - learn more <a href="https://druid.apache.org/docs/latest/querying/sql.html#group-by" target="_blank">here</a></li>
+    </ul>
+    <hr style="background-color:cyan">
+    </details>
+
+
+    ```
+    SELECT FLOOR(__time to HOUR) AS HourTime,
+      SUM(deleted) AS LinesDeleted
+      FROM wikipedia
+      WHERE "__time" BETWEEN
+        TIMESTAMP '2016-06-27 00:00:00'
+        AND
+        TIMESTAMP '2016-06-28 00:00:00'
+      GROUP BY 1;
+    ```
+
+    In the results from the query, you see the aggregation by hour of the day.
+    If you only ever cared about an hourly granularity across all queries on this table data source, you could have rolled up the timestamps during ingestion to speed up the query.
+
+    Let's try one more query.
+    This query yields the number of lines added to each channel/page pairing.
+
+
+    <details>
+      <summary style="color:cyan"><b>How does this query work?</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    Let's break down the various sections of this query.
+    <ul>
+    <li><i>SELECT channel, page, SUM(added) as "Sum"</i> selects three columns with the third being an aggregation named <i>Sum</i> - notice that <i>Sum</i> needs quotes because it is a reserverd word</li>
+    <li><i>FROM wikipedia WHERE "__time" BETWEEN...</i> behaves like the <i>WHERE</i> cluase in the first query, which filters down to June 27, 2016</li>
+    <li><i>GROUP BY channel, page</i> tells Druid to aggreagte rows that have the same values for <i>channel</i> and <i>page</i></li>
+    <li><i>ORDER BY SUM(added) DESC</i> causes the output to be sorted with the highest number of added lines at the top - learn more <a href="https://druid.apache.org/docs/latest/querying/sql.html#order-by" target="_blank">here</a></li>
+    <li><i>LIMIT 10</i> allows only 10 rows in the output - learn more <a href="https://druid.apache.org/docs/latest/querying/sql.html#limit" target="_blank">here</a></li>
+    </ul>
+    <hr style="background-color:cyan">
+    </details>
+
+
+    ```
+    SELECT channel, page, SUM(added) as "Sum"
+      FROM wikipedia
+      WHERE "__time" BETWEEN
+        TIMESTAMP '2016-06-27 00:00:00'
+        AND
+        TIMESTAMP '2016-06-28 00:00:00'
+      GROUP BY channel, page
+      ORDER BY SUM(added) DESC
+      LIMIT 10;
+    ```
+
+    Note that this query uses Druid's _TopN_ feature, which may yeild approximate results.
+    Read more about [_TopN_](https://druid.apache.org/docs/latest/querying/topnquery.html).
+
+
+    ## Hey! The command line tool is cool!
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: single-server
+  difficulty: basic
+  timelimit: 600
+- slug: 03-druid-query-api
+  id: bsxgzoygy1mh
+  type: challenge
+  title: Druid Queries Using the Broker API
+  teaser: Perform queries using the Broker API
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/UNCd52yCdck
+  assignment: |-
+    You may want to perform Druid queries using an API.
+    In this challenge, we'll use the API to perform the same query we used in the previous challenge.
+
+
+    You may remember the query from the previous challenge that looks at Wikipedia update activity by users.
+    Here's the query formatted as JSON.
+
+    ```
+    {
+      "query":
+      "SELECT __time, \"user\", page, added, deleted
+        FROM wikipedia
+        WHERE (TIMESTAMP '2016-06-27' <= __time
+          AND
+          __time < TIMESTAMP '2016-06-28')
+        LIMIT 5"
+    }
+    ```
+
+    Although the JSON specification does not allow line breaks within strings, the cURL command will remove the new-lines for us.
+    Notice how we escaped the double-quotes around _user_ using the backslash character.
+    Also, when using the API, we don't use the semicolon at the end of the query, like we did with the Druid client.
+
+    Open the file named _query-wiki-activity.json_, paste the query and save the file.
+
+    ![Build activity by user query](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/BuildActivityByUserQuery.png)
+
+    Back in the Shell, let's execute the query by submitting it to the API.
+
+    ```
+    curl -X 'POST' -H 'Content-Type:application/json' -d @/root/query-wiki-activity.json http://localhost:8888/druid/v2/sql | jq
+    ```
+
+    The cURL command sends the query to the Broker process with the following options.
+    - _-X 'POST'_ causes an HTTP POST operation
+    - _-H 'Content-Type:application/json'_ indicates the payload is JSON
+    - _-d @/root/query-wiki-activity.json_ specifies the payload file; Notice the _@_ which removes the line breaks from the file
+    - _http://localhost:8888/druid/v2/sql_ is the URL of the Broker process
+    - _| jq_ pipes the output from the query into _jq_, which formats the output
+
+    That's all there is to it!
+
+    ## Great! Accessing Druid via the API makes integrations easy!
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: single-server
+  - title: Editor
+    type: code
+    hostname: single-server
+    path: /root
+  difficulty: basic
+  timelimit: 600
+- slug: 04-druid-query-performance
+  id: cue1qj33o6w8
+  type: challenge
+  title: Druid Query Performance
+  teaser: Let's investigate how queries impact Druid processes
+  notes:
+  - type: video
+    url: https://www.youtube.com/embed/vdYC98HrDKQ
+  assignment: |-
+    In this challenge, we want to do some queries and see the effects on the various Druid processes.
+
+
+    Before we do the queries, let's set up a monitoring system consisting of:
+    - A Bash shell script that monitors the druid processes and outputs events
+    - A Kafka system that routes the events
+    - A Kafka broker that consumes the events from Kafka and ingests them into a Druid table data source
+
+    Let's run the Kafka broker in the background.
+
+    ```
+    /root/kafka_2.13-2.7.0/bin/kafka-server-start.sh /root/kafka_2.13-2.7.0/config/server.properties > /dev/null &
+    ```
+
+    Now, tell Kafka to create a topic named _druid-processes_.
+
+    <details>
+      <summary style="color:cyan"><b>What is a Kafka topic?</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    Kafka is a stream processing system that allows data providers to stream data to consumer processes.
+    Providers stream data to topics, and consumers subscribe to topics to receive data.
+    Think of a topic as a stream-like version of a database table.
+    <hr style="background-color:cyan">
+    </details>
+
+
+    ```
+    /root/kafka_2.13-2.7.0/bin/kafka-topics.sh --create --topic druid-processes --bootstrap-server localhost:9092
+    ```
+
+    Set the following Kafka environment variable.
+
+    ```
+    export KAFKA_OPTS="-Dfile.encoding=UTF-8"
+    ```
+
+    Start the producer, and pipe the results into Kafka.
+
+    <details>
+      <summary style="color:cyan"><b>How does this producer work?</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    This producer is a Bash shell script named <i>process-monotor-producer.sh</i> (feel free to open it in the editor and take a look).
+    This script uses the Linux <i>top</i> command in batch mode with an interval of a half-second.
+    Then, the script pulls out the druid-related processes and joins these, based on process ID, with the results of the <i>ps</i> command (to get the process names).
+    Finally, the script formats and outputs the results as JSON.
+    <br>
+    <br>
+    The command below takes the output from the shell script and pipes it into a Kafka script that publishes the events to a Kafka topic named <i>druid-processes</i>.
+    We run the entire command in the background to free up the terminal window.
+    We also pipe any remaining command output to <i>/dev/null</i> so it doesn't clutter up the screen.
+    <hr style="background-color:cyan">
+    </details>
+
+
+    ```
+    /root/process-monotor-producer.sh | /root/kafka_2.13-2.7.0/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic druid-processes > /dev/null &
+    ```
+
+    Start the Druid ingestion.
+
+    <details>
+      <summary style="color:cyan"><b>What does this command do?</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    If you have worked through the ingestion challenges, you will recognize that this command submits an ingestion spec to Druid.
+    This ingestion spec tells Druid how to connect to Kafka, how to interpret the incoming Kafka data, and how to store it in a Druid table data source.
+    <hr style="background-color:cyan">
+    </details>
+
+
+    ```
+    curl -XPOST -H'Content-Type: application/json' -d @/root/kafka-ingestion-spec.json   http://localhost:8081/druid/indexer/v1/supervisor | jq
+    ```
+
+    Now, we will run a Python program that queries our Druid database (using the Broker API) and plots the results of the query.
+    Here's the query the Python program uses.
+
+    <details>
+      <summary style="color:cyan"><b>What does this query do?</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    This query retrieves Druid process utilization metrics (e.g., CPU and memory) for the most recent one minute of activity.
+    <hr style="background-color:cyan">
+    </details>
+
+    ```
+    cat /root/query-wiki-activity-last-1-minute.json | jq
+    ```
+
+    Here's the command to perform the query and plot the results.
+    We want to run this in a separate terminal so we can leave it running while we perform queries.
+    Click on the _Monitor_ tab and run the query.
+
+    ```
+    python3 plot.py
+    ```
+
+    <details>
+      <summary style="color:cyan"><b>What does this graph show?</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    The graph shows the CPU usage for each of the five Druid processes.
+    The X axis represents time, with the most recent events on the left.
+    The Y axis is CPU usage in units that the Linux <i>top</i> command uses.
+    There is a line for each process, but due to the limits of character graphics, the lines in the front may hide the lines in the back.
+    <br>
+    <br>
+    The point of the graph is to show how much CPU (relatively) each process is consuming during operation.
+    Recall that the Broker process controls queries, so as queries happen, you should see its CPU usage increase.
+    Also, note that the plotting program is performing queries, which shows up on the graph.
+    <hr style="background-color:cyan">
+    </details>
+
+    You see that the Broker process exhibits more activity than the other processes.
+    This is because the Broker is fielding the polling requests from the graph plotting program.
+
+
+    It is important to understand that not all Druid queries behave the same way.
+    We might consider some Druid queries as anti-patterns, meaning these are types of queries we would like to avoid.
+
+
+    With the plotting program, we can observe the effects of anti-patterns on the Druid processes.
+    Any query not constrained by <i>__time</i>, such as _SELECT *_ with no _WHERRE_ clause, is one such anti-pattern.
+    Back in the _Shell_ tab, let's run this anti-pattern query.
+
+
+    ```
+    curl -X 'POST' -H 'Content-Type:application/json' -d @/root/select-star-wikipedia.json http://localhost:8888/druid/v2/sql > /dev/null
+    ```
+
+    Click back on the _Monitor_ tab and observe the effects of the anti-pattern query.
+
+    Now, look at the effects of the query on the processes.
+    Because this table data source is not very large (only one day of data), the effects of this anti-pattern query are not as severe as they would be for a larger table data source.
+    You are likely to see a slight spike in the Historical process activity and possible increased Broker process activity.
+    However, we are using the linux _top_ command to monitor CPU usage, and _top_ can be inaccurate on short spikes due to low sampling rates.
+
+    <hr style="background-color:cyan">
+    <p><span style="color:cyan"><strong><em>NOTE:</em></strong></span> <i>If you run the query several times, you will probably not see any additional spikes in activity.
+    This is because Druid is caching the results.
+    <hr style="background-color:cyan">
+
+
+    These ASCII graphics are very primitive.
+    We have a better way to visualize these metrics using Imply's Pivot data visualization app.
+    The following command will start Pivot in a separate browser tab.
+
+    ![Launch Pivot](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/LaunchPivot.png)
+
+    <details>
+      <summary style="color:cyan"><b>What is Pivot?</b></summary>
+    <hr style="background-color:cyan">
+    <br>
+    Pivot is a visualization application that is part of the Imply product suite.
+    You  may have noticed that for this track we have been running Imply's products rather than open source Druid.
+    This is so we could use the Pivot product to visualize the metrics we have been gathering.
+    <hr style="background-color:cyan">
+    </details>
+
+    We have configured a Pivot dashboard just for this application.
+    To view the dashboard, click as shown.
+
+    ![View Dashboard](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/ViewDashboard.png)
+
+    Explore the dashboard.
+    You will see that it updates every five seconds.
+    - The top-left shows the relative CPU utilization.
+    - The bottom-left shows the per process memory utilization as a barchart.
+    - The top-right show the mean CPU utilization over the one minute plotting period as a timeline.
+    - The middle-right chart is the maximum CPU utilization measured during the plotting period as a timeline.
+    - The bottom-right shows per process memory utilization as a timeline.
+
+    ![Pivot Dashboard](https://raw.githubusercontent.com/shallada/InstruqtImages/main/druid-query/PivotDashboard.png)
+
+    It will become important to understand Druid patterns and anti-patterns so that you get the most out of your Druid cluster.
+
+    ## Hey! This is epic!
+  tabs:
+  - title: Shell
+    type: terminal
+    hostname: single-server
+  - title: Monitor
+    type: terminal
+    hostname: single-server
+  - title: Pivot
+    type: service
+    hostname: single-server
+    path: /
+    port: 9095
+    new_window: true
+  - title: Editor
+    type: code
+    hostname: single-server
+    path: /root
+  difficulty: basic
+  timelimit: 600
+checksum: "17552515880634630019"
